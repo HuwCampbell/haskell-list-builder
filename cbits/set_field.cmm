@@ -1,0 +1,19 @@
+#include <Cmm.h>
+
+unsafeGetFieldzh (W_ i, gcptr p1) {
+  p1 = UNTAG(p1);
+  return (P_[p1 + SIZEOF_StgHeader + WDS(i)]);
+}
+
+unsafeSetFieldzh (W_ i, gcptr p1, gcptr p2) {
+  W_ bd;
+  p1 = UNTAG(p1);
+  P_[p1 + SIZEOF_StgHeader + WDS(i)] = p2;
+  bd = Bdescr(p1);
+  if (bdescr_gen_no(bd) != 0 :: bits16) {
+    recordMutableCap(p1, TO_W_(bdescr_gen_no(bd)));
+    return ();
+  } else {
+    return ();
+  }
+}

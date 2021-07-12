@@ -1,0 +1,48 @@
+name:                haskell-list-builder
+version:             0.1.0.0
+license-file:        LICENSE
+author:              Huw Campbell
+maintainer:          huw.campbell@gmail.com
+cabal-version:       >=1.10
+build-type:          Simple
+extra-source-files:  CHANGELOG.md
+
+
+library
+  build-depends:     base     >= 3 && < 5
+                   , ghc-prim
+                   , primitive
+
+  hs-source-dirs:    src
+  c-sources:         cbits/set_field.cmm
+  default-language:  Haskell2010
+
+  exposed-modules:   Data.ListBuilder
+                     Data.Traversable.IO
+
+  other-modules:     Data.ListBuilder.Unsafe
+
+
+test-suite tests
+  type:                exitcode-stdio-1.0
+  main-is:             test.hs
+  hs-source-dirs:      tests
+  default-language:    Haskell2010
+
+  build-depends:       base
+                     , haskell-list-builder
+                     , hedgehog
+
+
+benchmark bench
+  type:                 exitcode-stdio-1.0
+  hs-source-dirs:       benchmarks
+  main-is:              Main.hs
+
+  ghc-options:
+    -Wall -threaded
+
+  build-depends:        base
+                      , haskell-list-builder
+                      , criterion
+                      , dlist
