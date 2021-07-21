@@ -1,5 +1,6 @@
 name:                haskell-list-builder
 version:             0.1.0.0
+license:             BSD3
 license-file:        LICENSE
 author:              Huw Campbell
 maintainer:          huw.campbell@gmail.com

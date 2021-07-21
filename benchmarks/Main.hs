@@ -56,7 +56,7 @@ remake xs = do
   bldr <- ListBuilder.newBuilder
   for_ xs $ \x ->
     ListBuilder.append x bldr
-  ListBuilder.freeze bldr
+  ListBuilder.unsafeFreeze bldr
 
 
 rev :: [a] -> IO [a]
@@ -64,7 +64,7 @@ rev xs = do
   bldr <- ListBuilder.newBuilder
   for_ xs $ \x ->
     ListBuilder.append x bldr
-  ListBuilder.freeze bldr
+  ListBuilder.unsafeFreeze bldr
 
 
 consSnoc :: [a] -> IO [a]
@@ -73,7 +73,7 @@ consSnoc xs = do
   for_ xs $ \x -> do
     ListBuilder.append x bldr
     ListBuilder.prepend x bldr
-  ListBuilder.freeze bldr
+  ListBuilder.unsafeFreeze bldr
 
 diffConsSnoc :: a -> DList.DList a -> DList.DList a
 diffConsSnoc x dxs =

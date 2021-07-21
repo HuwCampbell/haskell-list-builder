@@ -1,4 +1,4 @@
-{-# LANGUAGE DoAndIfThenElse, BangPatterns #-}
+{-# LANGUAGE DoAndIfThenElse, BangPatterns, NamedFieldPuns #-}
 -- | Mutable List Builder.
 --
 --   A `ListBuilder s a` is a wrapper over `ST s [a]`, but uses unsafe
@@ -32,7 +32,6 @@ import Control.Monad.ST.Unsafe
 import Data.Foldable (foldr')
 import Data.STRef
     ( STRef,
-      modifySTRef,
       modifySTRef',
       newSTRef,
       readSTRef,
@@ -64,38 +63,38 @@ newBuilder = stToPrim $ do
 --
 --   /O(1)/
 append :: PrimMonad m => a -> ListBuilder (PrimState m) a -> m ()
-append a bldr = stToPrim $ do
+append a ListBuilder { start, end, len } = stToPrim $ do
   let
     !last' = [a]
-  len' <- readSTRef (len bldr)
+  len' <- readSTRef len
 
   if len' == 0 then do
-    writeSTRef (start bldr) last'
-    writeSTRef (end bldr) last'
+    writeSTRef start last'
+    writeSTRef end last'
   else do
-    end' <- readSTRef (end bldr)
+    end' <- readSTRef end
     unsafeIOToST $
       unsafeSetField 1 end' last'
-    writeSTRef (end bldr) last'
+    writeSTRef end last'
 
-  modifySTRef' (len bldr) (+1)
+  modifySTRef' len (+1)
 
 -- | Prepend an item to the front of the 'ListBuilder'
 --
 --   /O(1)/
 prepend :: PrimMonad m => a -> ListBuilder (PrimState m) a -> m ()
-prepend a bldr = stToPrim $ do
-  front <- readSTRef (start bldr)
-  len'  <- readSTRef (len bldr)
+prepend a ListBuilder { start, end, len } = stToPrim $ do
+  front <- readSTRef start
+  len'  <- readSTRef len
 
   let
     !front' = a : front
 
   when (len' == 0) $
-    writeSTRef (end bldr) front'
+    writeSTRef end front'
 
-  writeSTRef (start bldr) front'
-  modifySTRef (len bldr) (+1)
+  writeSTRef start front'
+  modifySTRef' len (+1)
 
 
 -- | The current length of the 'ListBuilder'.
