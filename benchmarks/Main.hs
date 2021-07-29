@@ -63,7 +63,7 @@ rev :: [a] -> IO [a]
 rev xs = do
   bldr <- ListBuilder.newBuilder
   for_ xs $ \x ->
-    ListBuilder.append x bldr
+    ListBuilder.prepend x bldr
   ListBuilder.unsafeFreeze bldr
 
 
