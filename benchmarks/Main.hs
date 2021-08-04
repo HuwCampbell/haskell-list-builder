@@ -1,11 +1,11 @@
 {-# LANGUAGE OverloadedStrings #-}
 module Main where
 
+import Control.Monad.ST
 import Criterion
 import Criterion.Main
 import Data.Foldable
 import qualified Data.DList as DList
-
 import Data.ListBuilder as ListBuilder
 
 main :: IO ()
@@ -17,9 +17,9 @@ main = do
   defaultMain [
       bgroup "small" [
         bgroup "list-builder" [
-          bench "remake"    $ whnfIO (remake small)
-        , bench "reverse"   $ whnfIO (rev small)
-        , bench "cons-snoc" $ whnfIO (consSnoc small)
+          bench "remake"    $ whnf remake small
+        , bench "reverse"   $ whnf rev small
+        , bench "cons-snoc" $ whnf consSnoc small
         ]
       , bgroup "pure-list" [
           bench "remake"    $ nf (foldr' (:) []) (small)
@@ -35,9 +35,9 @@ main = do
 
     , bgroup "large" [
         bgroup "list-builder" [
-          bench "remake"  $ whnfIO (remake large)
-        , bench "reverse" $ whnfIO (rev large)
-        , bench "cons-snoc" $ whnfIO (consSnoc large)
+          bench "remake"  $ nf remake large
+        , bench "reverse" $ nf rev large
+        , bench "cons-snoc" $ nf consSnoc large
         ]
       , bgroup "pure-list" [
           bench "remake"  $ nf (foldr (:) []) large
@@ -51,24 +51,24 @@ main = do
       ]
     ]
 
-remake :: [a] -> IO [a]
-remake xs = do
+remake :: [a] -> [a]
+remake xs = runST $ do
   bldr <- ListBuilder.newBuilder
   for_ xs $ \x ->
     ListBuilder.append x bldr
   ListBuilder.unsafeFreeze bldr
 
 
-rev :: [a] -> IO [a]
-rev xs = do
+rev :: [a] -> [a]
+rev xs = runST $ do
   bldr <- ListBuilder.newBuilder
   for_ xs $ \x ->
     ListBuilder.prepend x bldr
   ListBuilder.unsafeFreeze bldr
 
 
-consSnoc :: [a] -> IO [a]
-consSnoc xs = do
+consSnoc :: [a] -> [a]
+consSnoc xs = runST $ do
   bldr <- ListBuilder.newBuilder
   for_ xs $ \x -> do
     ListBuilder.append x bldr

@@ -51,8 +51,8 @@ data ListBuilder s a = ListBuilder {
 }
 
 -- | Create a new, empty 'ListBuilder'
-newBuilder :: PrimMonad m => m (ListBuilder (PrimState m) a)
-newBuilder = stToPrim $ do
+newBuilder :: ST s (ListBuilder s a)
+newBuilder = do
   start <- newSTRef []
   end   <- newSTRef []
   len   <- newSTRef 0
@@ -62,8 +62,8 @@ newBuilder = stToPrim $ do
 -- | Append an item to the back of the 'ListBuilder'
 --
 --   /O(1)/
-append :: PrimMonad m => a -> ListBuilder (PrimState m) a -> m ()
-append a ListBuilder { start, end, len } = stToPrim $ do
+append :: a -> ListBuilder s a -> ST s ()
+append a ListBuilder { start, end, len } = do
   let
     !last' = [a]
   len' <- readSTRef len
@@ -82,8 +82,8 @@ append a ListBuilder { start, end, len } = stToPrim $ do
 -- | Prepend an item to the front of the 'ListBuilder'
 --
 --   /O(1)/
-prepend :: PrimMonad m => a -> ListBuilder (PrimState m) a -> m ()
-prepend a ListBuilder { start, end, len } = stToPrim $ do
+prepend :: a -> ListBuilder s a -> ST s ()
+prepend a ListBuilder { start, end, len } = do
   front <- readSTRef start
   len'  <- readSTRef len
 
@@ -100,7 +100,7 @@ prepend a ListBuilder { start, end, len } = stToPrim $ do
 -- | The current length of the 'ListBuilder'.
 --
 --   /O(1)/
-length :: PrimMonad m => ListBuilder (PrimState m) a -> m Int
+length :: ListBuilder s a -> ST s Int
 length bldr = stToPrim $
   readSTRef (len bldr)
 
@@ -116,8 +116,8 @@ length bldr = stToPrim $
 --   mutating functions.
 --
 --   /O(1)/
-unsafeFreeze :: PrimMonad m => ListBuilder (PrimState m) a -> m [a]
-unsafeFreeze bldr = stToPrim $
+unsafeFreeze :: ListBuilder s a -> ST s [a]
+unsafeFreeze bldr =
   readSTRef (start bldr)
 
 
@@ -127,9 +127,9 @@ unsafeFreeze bldr = stToPrim $
 --   of the list.
 --
 --   /O(n)/
-freeze :: PrimMonad m => ListBuilder (PrimState m) a -> m [a]
+freeze :: ListBuilder s a -> ST s [a]
 freeze bldr = do
-  aliased <- stToPrim $
+  aliased <-
     readSTRef (start bldr)
 
   return $!

@@ -29,11 +29,12 @@ prop_reverses :: Property
 prop_reverses =
   property $ do
     xs <- forAll $ Gen.list (Range.linear 0 10000) Gen.alpha
-    result <- liftIO $  do
-      bldr <- ListBuilder.newBuilder
-      for_ xs $ \x ->
-        ListBuilder.prepend x bldr
-      ListBuilder.freeze bldr
+    let
+      result = runST $ do
+        bldr <- ListBuilder.newBuilder
+        for_ xs $ \x ->
+          ListBuilder.prepend x bldr
+        ListBuilder.freeze bldr
     reverse result === xs
 
 prop_sequenceIO :: Property
