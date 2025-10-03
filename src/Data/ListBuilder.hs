@@ -17,6 +17,8 @@ module Data.ListBuilder (
   , append
   , prepend
   , length
+  , clear
+  , filterInPlace
   , freeze
   , unsafeFreeze
   ) where
@@ -25,7 +27,6 @@ import Data.ListBuilder.Unsafe
 
 import Control.Monad (when)
 import Control.Monad.ST
-import Control.Monad.Primitive
 
 import Control.Monad.ST.Unsafe
 
@@ -101,11 +102,59 @@ prepend a ListBuilder { start, end, len } = do
 --
 --   /O(1)/
 length :: ListBuilder s a -> ST s Int
-length bldr = stToPrim $
+length bldr =
   readSTRef (len bldr)
 
 
+-- | Empty the 'ListBuilder' of all values.
+--
+--   /O(1)/
+clear :: ListBuilder s a -> ST s ()
+clear ListBuilder { start, end, len } = do
+  writeSTRef start []
+  writeSTRef end []
+  writeSTRef len 0
 
+
+-- | Filter the 'ListBuilder' with the supplied predicate
+--
+--   /O(N)/
+filterInPlace :: (a -> Bool) -> ListBuilder s a -> ST s ()
+filterInPlace func bldr@ListBuilder { start, end, len } = do
+  prev   <- newSTRef Nothing
+  start' <- readSTRef start
+  cur    <- newSTRef start'
+  let
+    go = do
+      cur' <- readSTRef cur
+      case cur' of
+        [] -> return ()
+
+        (h:follow) -> do
+          prev' <- readSTRef prev
+          if not (func h) then do
+            case prev' of
+              Nothing ->
+                writeSTRef start follow
+              Just y ->
+                unsafeIOToST $
+                  unsafeSetField 1 y follow
+
+            modifySTRef' len (\x -> x - 1)
+          else
+            writeSTRef prev (Just cur')
+
+          writeSTRef cur follow
+          go
+
+      prev' <- readSTRef prev
+      case prev' of
+        Nothing -> do
+          writeSTRef end []
+        Just y ->
+          writeSTRef end y
+
+  go
 
 
 -- | Return the 'Data.List.List' backing the 'ListBuilder'.

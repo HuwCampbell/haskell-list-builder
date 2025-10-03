@@ -6,7 +6,6 @@ import qualified Hedgehog.Range as Range
 import qualified Hedgehog.Main as Main
 
 import           Control.Monad.ST
-import           Control.Monad.IO.Class
 import           Data.Foldable
 import           Data.IORef
 
@@ -86,6 +85,22 @@ prop_freeze_is_safe =
 
     result   === xs
     withTips === (z : xs <> [y])
+
+
+prop_filter_in_place :: Property
+prop_filter_in_place =
+  property $ do
+    xs <- forAll $ Gen.list (Range.linear 0 10000) (Gen.int (Range.linear 0 10))
+    let
+      result = runST $  do
+        bldr <- ListBuilder.newBuilder
+        for_ xs $ \x ->
+          ListBuilder.append x bldr
+
+        ListBuilder.filterInPlace even bldr
+        ListBuilder.freeze bldr
+
+    result === filter even xs
 
 
 tests :: IO Bool
