@@ -159,10 +159,13 @@ filterInPlace func bldr@ListBuilder { start, end, len } = do
 
 -- | Return the 'Data.List.List' backing the 'ListBuilder'.
 --
---   This does _not_ stop mutations made to
+--   This does /not/ stop mutations made to
 --   the builder from affecting the resultant
 --   list. So one must not continue to call the
 --   mutating functions.
+--
+--   Usually, one would use this function to return as the
+--   call within a 'runST' block.
 --
 --   /O(1)/
 unsafeFreeze :: ListBuilder s a -> ST s [a]
