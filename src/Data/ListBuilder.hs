@@ -147,14 +147,15 @@ filterInPlace func bldr@ListBuilder { start, end, len } = do
           writeSTRef cur follow
           go
 
-      prev' <- readSTRef prev
-      case prev' of
-        Nothing -> do
-          writeSTRef end []
-        Just y ->
-          writeSTRef end y
-
   go
+
+  prev' <- readSTRef prev
+  case prev' of
+    Nothing -> do
+      writeSTRef end []
+    Just y ->
+      writeSTRef end y
+
 
 
 -- | Return the 'Data.List.List' backing the 'ListBuilder'.
