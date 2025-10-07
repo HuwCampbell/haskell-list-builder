@@ -1,24 +1,34 @@
 {-# LANGUAGE DoAndIfThenElse, BangPatterns, NamedFieldPuns #-}
 -- | Mutable List Builder.
 --
---   A `ListBuilder s a` is a wrapper over `ST s [a]`, but uses unsafe
+--   A @ListBuilder s a@ is a wrapper over @ST s [a]@, but uses unsafe
 --   mutation to achieve constant time append as well as prepend.
 --
 --   As the builder is backed with a standard 'Data.List.List', it
 --   is light-weight and cheap to return to a list.
 --
---   Code from this module is derived from Scala's ListBuffer module,
---   using the unsafe set field technique described by
+--   Code from this module is derived from Scala's
+--   [ListBuffer](https://www.scala-lang.org/api/current/scala/collection/mutable/ListBuffer.html)
+--   module, using the unsafe set field technique described by
 --   [Twan van Laarhoven](https://www.twanvl.nl/blog/haskell/unsafe-sequence).
 module Data.ListBuilder (
+    -- * Mutable list builder
     ListBuilder
 
+  -- * Construction
   , newBuilder
   , append
   , prepend
-  , length
-  , clear
   , filterInPlace
+  , clear
+
+  -- * Accessors
+  , length
+  , null
+  , headMaybe
+  , lastMaybe
+
+  -- * Conversions
   , freeze
   , unsafeFreeze
   ) where
@@ -27,10 +37,10 @@ import Data.ListBuilder.Unsafe
 
 import Control.Monad (when)
 import Control.Monad.ST
-
 import Control.Monad.ST.Unsafe
 
 import Data.Foldable (foldr')
+import Data.Maybe (listToMaybe)
 import Data.STRef
     ( STRef,
       modifySTRef',
@@ -38,7 +48,7 @@ import Data.STRef
       readSTRef,
       writeSTRef )
 
-import Prelude hiding (length)
+import Prelude hiding (length, null)
 
 -- | A List Builder.
 --
@@ -106,6 +116,15 @@ length bldr =
   readSTRef (len bldr)
 
 
+-- | Whether the 'ListBuilder' is currently empty.
+--
+--   /O(1)/
+null :: ListBuilder s a -> ST s Bool
+null bldr =
+  (== 0) <$> length bldr
+
+
+
 -- | Empty the 'ListBuilder' of all values.
 --
 --   /O(1)/
@@ -120,7 +139,7 @@ clear ListBuilder { start, end, len } = do
 --
 --   /O(N)/
 filterInPlace :: (a -> Bool) -> ListBuilder s a -> ST s ()
-filterInPlace func bldr@ListBuilder { start, end, len } = do
+filterInPlace func ListBuilder { start, end, len } = do
   prev   <- newSTRef Nothing
   start' <- readSTRef start
   cur    <- newSTRef start'
@@ -157,6 +176,22 @@ filterInPlace func bldr@ListBuilder { start, end, len } = do
       writeSTRef end y
 
 
+-- | Return the current last element in the 'ListBuilder'
+--
+--   /O(1)/
+lastMaybe :: ListBuilder s a -> ST s (Maybe a)
+lastMaybe ListBuilder { end } = do
+  listToMaybe <$> readSTRef end
+
+
+
+-- | Return the current first element in the 'ListBuilder'
+--
+--   /O(1)/
+headMaybe :: ListBuilder s a -> ST s (Maybe a)
+headMaybe ListBuilder { start } = do
+  listToMaybe <$> readSTRef start
+
 
 -- | Return the 'Data.List.List' backing the 'ListBuilder'.
 --
@@ -165,8 +200,8 @@ filterInPlace func bldr@ListBuilder { start, end, len } = do
 --   list. So one must not continue to call the
 --   mutating functions.
 --
---   Usually, one would use this function to return as the
---   call within a 'runST' block.
+--   This operation would usually be used as the
+--   final return call in a @runST@ block.
 --
 --   /O(1)/
 unsafeFreeze :: ListBuilder s a -> ST s [a]

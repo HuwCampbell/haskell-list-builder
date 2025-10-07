@@ -15,7 +15,8 @@ maintainer:          huw.campbell@gmail.com
 cabal-version:       >=1.10
 build-type:          Simple
 extra-source-files:  CHANGELOG.md
-
+homepage:            https://tangled.org/@huwcampbell.com/haskell-list-builder
+bug-reports:         https://tangled.org/@huwcampbell.com/haskell-list-builder/issues
 
 library
   build-depends:     base     >= 3 && < 5
@@ -30,6 +31,8 @@ library
                      Data.Traversable.IO
 
   other-modules:     Data.ListBuilder.Unsafe
+  ghc-options:
+    -Wall
 
 
 test-suite tests
