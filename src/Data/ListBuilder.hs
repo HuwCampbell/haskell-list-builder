@@ -17,16 +17,17 @@ module Data.ListBuilder (
 
   -- * Construction
   , newBuilder
+
+  -- * Mutations
   , append
   , prepend
   , filterInPlace
   , clear
 
   -- * Accessors
-  , length
-  , null
-  , headMaybe
-  , lastMaybe
+  , readLength
+  , readFirst
+  , readLast
 
   -- * Conversions
   , freeze
@@ -48,7 +49,7 @@ import Data.STRef
       readSTRef,
       writeSTRef )
 
-import Prelude hiding (length, null)
+import Prelude
 
 -- | A List Builder.
 --
@@ -111,18 +112,9 @@ prepend a ListBuilder { start, end, len } = do
 -- | The current length of the 'ListBuilder'.
 --
 --   /O(1)/
-length :: ListBuilder s a -> ST s Int
-length bldr =
+readLength :: ListBuilder s a -> ST s Int
+readLength bldr =
   readSTRef (len bldr)
-
-
--- | Whether the 'ListBuilder' is currently empty.
---
---   /O(1)/
-null :: ListBuilder s a -> ST s Bool
-null bldr =
-  (== 0) <$> length bldr
-
 
 
 -- | Empty the 'ListBuilder' of all values.
@@ -179,8 +171,8 @@ filterInPlace func ListBuilder { start, end, len } = do
 -- | Return the current last element in the 'ListBuilder'
 --
 --   /O(1)/
-lastMaybe :: ListBuilder s a -> ST s (Maybe a)
-lastMaybe ListBuilder { end } = do
+readLast :: ListBuilder s a -> ST s (Maybe a)
+readLast ListBuilder { end } = do
   listToMaybe <$> readSTRef end
 
 
@@ -188,8 +180,8 @@ lastMaybe ListBuilder { end } = do
 -- | Return the current first element in the 'ListBuilder'
 --
 --   /O(1)/
-headMaybe :: ListBuilder s a -> ST s (Maybe a)
-headMaybe ListBuilder { start } = do
+readFirst :: ListBuilder s a -> ST s (Maybe a)
+readFirst ListBuilder { start } = do
   listToMaybe <$> readSTRef start
 
 

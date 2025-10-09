@@ -27,7 +27,7 @@ traverseIO f (mx0:xs0) = do
   go front xs0
   return front
     where
-  go back [] = return ()
+  go _ [] = return ()
   go back (mx:xs) = do
     x <- f mx
     let back' = [x]

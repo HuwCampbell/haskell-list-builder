@@ -5,7 +5,6 @@ module Data.ListBuilder.Unsafe (
   ,  unsafeGetField
   ) where
 
-import GHC.IO
 import GHC.Prim
 import GHC.Exts
 
