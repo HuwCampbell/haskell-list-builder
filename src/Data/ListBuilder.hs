@@ -21,6 +21,7 @@ module Data.ListBuilder (
   -- * Mutations
   , append
   , prepend
+  , insert
   , filterInPlace
   , clear
 
@@ -28,6 +29,7 @@ module Data.ListBuilder (
   , readLength
   , readFirst
   , readLast
+  , readAt
 
   -- * Conversions
   , freeze
@@ -35,6 +37,7 @@ module Data.ListBuilder (
   ) where
 
 import Data.ListBuilder.Unsafe
+import qualified Data.List
 
 import Control.Monad (when)
 import Control.Monad.ST
@@ -42,14 +45,7 @@ import Control.Monad.ST.Unsafe
 
 import Data.Foldable (foldr')
 import Data.Maybe (listToMaybe)
-import Data.STRef
-    ( STRef,
-      modifySTRef',
-      newSTRef,
-      readSTRef,
-      writeSTRef )
-
-import Prelude
+import Data.STRef (STRef, newSTRef, readSTRef, writeSTRef, modifySTRef')
 
 -- | A List Builder.
 --
@@ -107,6 +103,51 @@ prepend a ListBuilder { start, end, len } = do
 
   writeSTRef start front'
   modifySTRef' len (+1)
+
+
+-- | Internal function. Locates the previous cons cell.
+--
+--   /O(N)/
+locate :: Int -> ListBuilder s a -> ST s [a]
+locate 0 _ = error "Internal error: locate called on 0"
+locate i ListBuilder { start, end, len } = do
+  l <- readSTRef len
+
+  if l == i then
+    readSTRef end
+
+  else do
+    start' <- readSTRef start
+    cur    <- newSTRef start'
+    let
+      go 0 = readSTRef cur
+      go j = do
+        modifySTRef' cur (drop 1)
+        go (j - 1)
+    go (i - 1)
+
+-- | Insert into a location in a 'ListBuilder'.
+--
+--   This function doesn't create a new spine
+--   across the list builder, and only allocates
+--   the new cons cell itself.
+--
+--   /O(N)/
+insert :: Int -> a -> ListBuilder s a -> ST s ()
+insert ix _ _ | ix < 0 = error "Index out of bounds"
+insert 0 a bldr = prepend a bldr
+insert ix a bldr= do
+  len' <- readSTRef (len bldr)
+  if ix == len' then
+    append a bldr
+  else if ix > len' then
+    error "Index out of bounds"
+  else do
+    prev  <- locate ix bldr
+    let !pn = drop 1 prev
+    let !nx = a:pn
+    unsafeIOToST $
+      unsafeSetField 1 prev nx
 
 
 -- | The current length of the 'ListBuilder'.
@@ -185,6 +226,15 @@ readFirst ListBuilder { start } = do
   listToMaybe <$> readSTRef start
 
 
+-- | Return the current element at a particular index for
+--   the 'ListBuilder'
+--
+--   /O(N)/
+readAt :: ListBuilder s a -> Int -> ST s (Maybe a)
+readAt ListBuilder { start } ix = do
+  (Data.List.!? ix) <$> readSTRef start
+
+
 -- | Return the 'Data.List.List' backing the 'ListBuilder'.
 --
 --   This does /not/ stop mutations made to
@@ -192,8 +242,8 @@ readFirst ListBuilder { start } = do
 --   list. So one must not continue to call the
 --   mutating functions.
 --
---   This operation would usually be used as the
---   final return call in a @runST@ block.
+--   This function is safe in tail position within a
+--   call to @runST@.
 --
 --   /O(1)/
 unsafeFreeze :: ListBuilder s a -> ST s [a]
