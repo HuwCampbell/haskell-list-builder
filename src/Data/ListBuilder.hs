@@ -1,7 +1,7 @@
 {-# LANGUAGE DoAndIfThenElse, BangPatterns, NamedFieldPuns #-}
 -- | Mutable List Builder.
 --
---   A @ListBuilder s a@ is a wrapper over @ST s [a]@, but uses unsafe
+--   A @ListBuilder s a@ is like a wrapper over @ST s [a]@, but uses unsafe
 --   mutation to achieve constant time append as well as prepend.
 --
 --   As the builder is backed with a standard 'Data.List.List', it

@@ -1,5 +1,5 @@
 name:                haskell-list-builder
-synopsis:            Extra Unsafe Sequencing and Building of lists.
+synopsis:            Fast Sequencing and Building Lists using Unsafe Primitives
 description:
   Extra unsafe sequencing of IO actions from [Twan van Laarhoven](https://www.twanvl.nl/blog/haskell/unsafe-sequence)
   packaged up, along with `unfoldIO` and an implementation of Scala's List Buffer. This means we can have tail
